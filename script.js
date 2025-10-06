@@ -9,17 +9,18 @@ class ExpenseTracker {
     }
 
     initApp() {
-        // Check if user is already logged in
-        const savedUser = localStorage.getItem('expense-tracker-current-user');
-        if (savedUser) {
-            this.currentUser = JSON.parse(savedUser);
-            this.showMainApp();
-        } else {
-            this.showLoginPage();
-        }
+        console.log('Initializing app...');
+        
+        // Clear any old session data to force login
+        localStorage.removeItem('expense-tracker-current-user');
+        
+        // Always show login page first
+        this.showLoginPage();
         
         this.bindLoginEvents();
         this.initTheme();
+        
+        console.log('Login page should be visible now');
     }
 
     init() {
