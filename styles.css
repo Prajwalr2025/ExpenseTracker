@@ -133,8 +133,9 @@
 }
 
 .btn-login:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    filter: brightness(1.03);
 }
 
 .btn-demo {
@@ -156,6 +157,7 @@
 .btn-demo:hover {
     background: var(--border-color);
     transform: translateY(-1px);
+    transition: all var(--transition-fast);
 }
 
 .login-divider {
@@ -296,7 +298,8 @@
 .logout-btn:hover {
     background: #dc2626;
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
 }
 
 /* Enhanced Form Styles */
@@ -540,7 +543,8 @@ body {
     background: var(--bg-tertiary);
     border-color: var(--border-hover);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
 }
 
 /* Main Content */
@@ -752,6 +756,7 @@ body {
 .btn-secondary:hover {
     background: var(--border-color);
     transform: translateY(-1px);
+    transition: all var(--transition-fast);
 }
 
 .btn-danger {
@@ -760,8 +765,9 @@ body {
 }
 
 .btn-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
 }
 
 /* Filter Section */
@@ -884,8 +890,9 @@ body {
 }
 
 .transaction-item:hover {
-    transform: translateX(4px);
-    box-shadow: var(--shadow-md);
+    transform: translateX(2px);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
 }
 
 .transaction-item:hover::before {
@@ -989,7 +996,8 @@ body {
 }
 
 .action-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
+    transition: all var(--transition-fast);
 }
 
 /* Empty State */
@@ -1347,18 +1355,25 @@ body {
     animation-fill-mode: both;
 }
 
-/* Enhanced hover effects */
+/* Enhanced hover effects - More Stable */
 .summary-card:hover {
-    animation: breathe 2s ease-in-out infinite;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    transition: all var(--transition-normal);
 }
 
 .btn-primary:hover {
-    animation: glowPulse 1.5s ease-in-out infinite;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    filter: brightness(1.05);
+    transition: all var(--transition-normal);
 }
 
-/* Liquid morphing for special elements */
+/* Stable form section hover */
 .form-section:hover {
-    animation: liquidMorph 4s ease-in-out infinite;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-normal);
 }
 
 /* Text reveal animations */
