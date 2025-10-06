@@ -566,19 +566,7 @@ body {
     gap: 1.5rem;
 }
 
-.summary-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-normal);
-    position: relative;
-    overflow: hidden;
-}
+/* Summary card styling moved to stable hover section below */
 
 .summary-card::before {
     content: '';
@@ -589,16 +577,14 @@ body {
     height: 4px;
     background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
     transform: scaleX(0);
-    transition: transform var(--transition-normal);
+    transition: transform 0.4s ease;
 }
 
-.summary-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
+/* Summary card hover moved to stable section below */
 
 .summary-card:hover::before {
     transform: scaleX(1);
+    transition: transform 0.4s ease;
 }
 
 .income-card .card-icon {
@@ -641,19 +627,7 @@ body {
     margin: 0;
 }
 
-/* Form Section */
-.form-section {
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-xl);
-    padding: 2rem;
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-normal);
-}
-
-.form-section:hover {
-    box-shadow: var(--shadow-md);
-}
+/* Form Section - Removed duplicate, using stable version below */
 
 .form-container h2 {
     margin-bottom: 1.5rem;
@@ -1341,10 +1315,7 @@ body {
     animation: elasticFadeIn 1.2s var(--bounce-easing);
 }
 
-.summary-card {
-    animation: slideInWithBounce 0.8s var(--elastic-easing);
-    animation-fill-mode: both;
-}
+/* Summary card animation - using stable version below */
 
 .summary-card:nth-child(1) { animation-delay: 0.1s; }
 .summary-card:nth-child(2) { animation-delay: 0.2s; }
@@ -1355,11 +1326,28 @@ body {
     animation-fill-mode: both;
 }
 
-/* Enhanced hover effects - More Stable */
+/* Stable summary card hover effects */
+.summary-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+    animation: slideInWithBounce 0.8s var(--elastic-easing);
+    animation-fill-mode: both;
+}
+
 .summary-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-    transition: all var(--transition-normal);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+    transition: all 0.4s ease;
 }
 
 .btn-primary:hover {
@@ -1369,11 +1357,19 @@ body {
     transition: all var(--transition-normal);
 }
 
-/* Stable form section hover */
+/* Completely stable form section - no hover effects */
+.form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--transition-normal);
+}
+
 .form-section:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-    transition: all var(--transition-normal);
+    border-color: var(--border-hover);
+    transition: border-color var(--transition-normal);
 }
 
 /* Text reveal animations */
