@@ -1326,17 +1326,18 @@ body {
     animation-fill-mode: both;
 }
 
-/* Stable summary card hover effects */
+/* COMPLETELY STABLE SUMMARY CARDS - VERSION 3.0 */
 .summary-card {
     background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--success-color) !important;
     border-radius: var(--radius-xl);
     padding: 1.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     box-shadow: var(--shadow-sm);
-    transition: all 0.4s ease;
+    transition: none !important;
+    transform: none !important;
     position: relative;
     overflow: hidden;
     animation: slideInWithBounce 0.8s var(--elastic-easing);
@@ -1344,10 +1345,11 @@ body {
 }
 
 .summary-card:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--border-hover);
-    transition: all 0.4s ease;
+    background: var(--bg-card) !important;
+    border: 2px solid var(--success-color) !important;
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: none !important;
 }
 
 .btn-primary:hover {
@@ -1357,19 +1359,23 @@ body {
     transition: all var(--transition-normal);
 }
 
-/* Completely stable form section - no hover effects */
+/* COMPLETELY STABLE FORM SECTION - VERSION 3.0 */
 .form-section {
     background: var(--bg-card);
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--primary-color) !important;
     border-radius: var(--radius-xl);
     padding: 2rem;
     box-shadow: var(--shadow-sm);
-    transition: border-color var(--transition-normal);
+    transition: none !important;
+    transform: none !important;
 }
 
 .form-section:hover {
-    border-color: var(--border-hover);
-    transition: border-color var(--transition-normal);
+    background: var(--bg-card) !important;
+    border: 2px solid var(--primary-color) !important;
+    transform: none !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: none !important;
 }
 
 /* Text reveal animations */
