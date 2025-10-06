@@ -1,18 +1,35 @@
 // Expense Tracker Application
 class ExpenseTracker {
     constructor() {
-        this.transactions = this.loadTransactions();
+        this.transactions = [];
         this.currentEditId = null;
-        this.init();
+        this.currentUser = null;
+        this.users = this.loadUsers();
+        this.initApp();
+    }
+
+    initApp() {
+        // Check if user is already logged in
+        const savedUser = localStorage.getItem('expense-tracker-current-user');
+        if (savedUser) {
+            this.currentUser = JSON.parse(savedUser);
+            this.showMainApp();
+        } else {
+            this.showLoginPage();
+        }
+        
+        this.bindLoginEvents();
+        this.initTheme();
     }
 
     init() {
+        this.transactions = this.loadTransactions();
         this.bindEvents();
         this.updateSummary();
         this.renderTransactions();
         this.setCurrentDate();
-        this.initTheme();
         this.initAdvancedAnimations();
+        this.updateUserInfo();
     }
 
     // Event Binding
@@ -79,6 +96,63 @@ class ExpenseTracker {
                 this.closeEditModal();
             }
         });
+
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            this.logout();
+        });
+
+        // Reset form button
+        document.getElementById('resetFormBtn').addEventListener('click', () => {
+            this.resetForm();
+        });
+    }
+
+    // Login Event Binding
+    bindLoginEvents() {
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleLogin();
+        });
+
+        // Demo login
+        document.getElementById('demoLogin').addEventListener('click', () => {
+            this.demoLogin();
+        });
+
+        // Show signup modal
+        document.getElementById('showSignup').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showSignupModal();
+        });
+
+        // Signup form submission
+        document.getElementById('signupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleSignup();
+        });
+
+        // Close signup modal
+        document.getElementById('closeSignup').addEventListener('click', () => {
+            this.closeSignupModal();
+        });
+
+        document.getElementById('cancelSignup').addEventListener('click', () => {
+            this.closeSignupModal();
+        });
+
+        // Password toggle
+        document.getElementById('togglePassword').addEventListener('click', () => {
+            this.togglePasswordVisibility();
+        });
+
+        // Close signup modal when clicking outside
+        document.getElementById('signupModal').addEventListener('click', (e) => {
+            if (e.target.id === 'signupModal') {
+                this.closeSignupModal();
+            }
+        });
     }
 
     // Theme Management
@@ -106,6 +180,158 @@ class ExpenseTracker {
     updateThemeIcon(theme) {
         const themeIcon = document.querySelector('#themeToggle i');
         themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    // Authentication Methods
+    handleLogin() {
+        const formData = new FormData(document.getElementById('loginForm'));
+        const email = formData.get('email').trim();
+        const password = formData.get('password');
+        const rememberMe = formData.get('rememberMe') === 'on';
+
+        // Simple validation
+        if (!email || !password) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
+        // Check if user exists
+        const user = this.users.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+            this.currentUser = user;
+            localStorage.setItem('expense-tracker-current-user', JSON.stringify(user));
+            
+            if (rememberMe) {
+                localStorage.setItem('expense-tracker-remember', 'true');
+            }
+            
+            this.showNotification(`Welcome back, ${user.name}!`, 'success');
+            this.showMainApp();
+        } else {
+            this.showNotification('Invalid email or password', 'error');
+        }
+    }
+
+    handleSignup() {
+        const formData = new FormData(document.getElementById('signupForm'));
+        const name = formData.get('name').trim();
+        const email = formData.get('email').trim();
+        const password = formData.get('password');
+        const confirmPassword = formData.get('confirmPassword');
+
+        // Validation
+        if (!name || !email || !password || !confirmPassword) {
+            this.showNotification('Please fill in all fields', 'error');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            this.showNotification('Passwords do not match', 'error');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showNotification('Password must be at least 6 characters', 'error');
+            return;
+        }
+
+        // Check if user already exists
+        if (this.users.find(u => u.email === email)) {
+            this.showNotification('User with this email already exists', 'error');
+            return;
+        }
+
+        // Create new user
+        const newUser = {
+            id: this.generateId(),
+            name,
+            email,
+            password,
+            createdAt: new Date().toISOString()
+        };
+
+        this.users.push(newUser);
+        this.saveUsers();
+        
+        this.showNotification('Account created successfully!', 'success');
+        this.closeSignupModal();
+        
+        // Auto-fill login form
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPassword').value = password;
+    }
+
+    demoLogin() {
+        // Create demo user if doesn't exist
+        const demoUser = {
+            id: 'demo-user',
+            name: 'Demo User',
+            email: 'demo@example.com',
+            password: 'demo123'
+        };
+
+        this.currentUser = demoUser;
+        localStorage.setItem('expense-tracker-current-user', JSON.stringify(demoUser));
+        
+        this.showNotification('Welcome to the demo!', 'success');
+        this.showMainApp();
+    }
+
+    logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            this.currentUser = null;
+            localStorage.removeItem('expense-tracker-current-user');
+            this.showNotification('Logged out successfully', 'success');
+            this.showLoginPage();
+        }
+    }
+
+    showLoginPage() {
+        document.getElementById('loginContainer').style.display = 'flex';
+        document.getElementById('mainApp').style.display = 'none';
+        document.body.style.overflow = 'hidden';
+    }
+
+    showMainApp() {
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.body.style.overflow = '';
+        this.init();
+    }
+
+    showSignupModal() {
+        document.getElementById('signupModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+            document.getElementById('signupName').focus();
+        }, 100);
+    }
+
+    closeSignupModal() {
+        document.getElementById('signupModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.getElementById('signupForm').reset();
+    }
+
+    togglePasswordVisibility() {
+        const passwordInput = document.getElementById('loginPassword');
+        const toggleBtn = document.getElementById('togglePassword');
+        const icon = toggleBtn.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            icon.className = 'fas fa-eye-slash';
+        } else {
+            passwordInput.type = 'password';
+            icon.className = 'fas fa-eye';
+        }
+    }
+
+    updateUserInfo() {
+        if (this.currentUser) {
+            document.getElementById('userName').textContent = this.currentUser.name;
+        }
     }
 
     // Date Management
@@ -757,8 +983,11 @@ class ExpenseTracker {
 
     // Local Storage Management
     saveTransactions() {
+        if (!this.currentUser) return;
+        
         try {
-            localStorage.setItem('expense-tracker-transactions', JSON.stringify(this.transactions));
+            const key = `expense-tracker-transactions-${this.currentUser.id}`;
+            localStorage.setItem(key, JSON.stringify(this.transactions));
         } catch (error) {
             console.error('Error saving transactions:', error);
             this.showNotification('Error saving data to local storage', 'error');
@@ -766,12 +995,33 @@ class ExpenseTracker {
     }
 
     loadTransactions() {
+        if (!this.currentUser) return [];
+        
         try {
-            const saved = localStorage.getItem('expense-tracker-transactions');
+            const key = `expense-tracker-transactions-${this.currentUser.id}`;
+            const saved = localStorage.getItem(key);
             return saved ? JSON.parse(saved) : [];
         } catch (error) {
             console.error('Error loading transactions:', error);
             this.showNotification('Error loading saved data', 'error');
+            return [];
+        }
+    }
+
+    saveUsers() {
+        try {
+            localStorage.setItem('expense-tracker-users', JSON.stringify(this.users));
+        } catch (error) {
+            console.error('Error saving users:', error);
+        }
+    }
+
+    loadUsers() {
+        try {
+            const saved = localStorage.getItem('expense-tracker-users');
+            return saved ? JSON.parse(saved) : [];
+        } catch (error) {
+            console.error('Error loading users:', error);
             return [];
         }
     }
