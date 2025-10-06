@@ -1169,12 +1169,12 @@ body {
 
 @keyframes glowPulse {
     0%, 100% {
-        box-shadow: 0 0 5px rgba(99, 102, 241, 0.3);
+        box-shadow: 0 0 3px rgba(99, 102, 241, 0.2);
         transform: scale(1);
     }
     50% {
-        box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), 0 0 30px rgba(99, 102, 241, 0.4);
-        transform: scale(1.02);
+        box-shadow: 0 0 6px rgba(99, 102, 241, 0.3);
+        transform: scale(1.01);
     }
 }
 
@@ -1282,8 +1282,8 @@ body {
         filter: brightness(1);
     }
     50% {
-        transform: scale(1.03);
-        filter: brightness(1.1);
+        transform: scale(1.01);
+        filter: brightness(1.02);
     }
 }
 
@@ -1437,7 +1437,7 @@ body {
 *:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
-    animation: glowPulse 1s ease-in-out;
+    transition: box-shadow var(--transition-fast);
 }
 
 /* Parallax-like effect for scrolling */
