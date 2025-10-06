@@ -12,6 +12,7 @@ class ExpenseTracker {
         this.renderTransactions();
         this.setCurrentDate();
         this.initTheme();
+        this.initAdvancedAnimations();
     }
 
     // Event Binding
@@ -274,18 +275,32 @@ class ExpenseTracker {
 
         container.innerHTML = transactions.map(transaction => this.createTransactionHTML(transaction)).join('');
 
-        // Add event listeners to action buttons
-        container.querySelectorAll('.edit-btn').forEach(btn => {
+        // Add event listeners to action buttons with modern animations
+        container.querySelectorAll('.edit-btn').forEach((btn, index) => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                this.createRippleEffect(e);
                 this.editTransaction(btn.dataset.id);
+            });
+            
+            // Add stagger animation
+            btn.parentElement.parentElement.style.setProperty('--stagger-index', index);
+        });
+
+        container.querySelectorAll('.delete-btn').forEach((btn, index) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.createRippleEffect(e);
+                this.deleteTransaction(btn.dataset.id);
             });
         });
 
-        container.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.deleteTransaction(btn.dataset.id);
+        // Add hover animations to transaction items
+        container.querySelectorAll('.transaction-item').forEach((item, index) => {
+            item.style.setProperty('--stagger-index', index);
+            
+            item.addEventListener('mouseenter', () => {
+                this.createParticleEffect(item);
             });
         });
     }
@@ -378,29 +393,7 @@ class ExpenseTracker {
 
     animateValue(elementId, endValue) {
         const element = document.getElementById(elementId);
-        const startValue = parseFloat(element.textContent.replace(/[$,]/g, '')) || 0;
-        const duration = 500;
-        const startTime = performance.now();
-
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Easing function for smooth animation
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-            const currentValue = startValue + (endValue - startValue) * easeOutQuart;
-            
-            element.textContent = new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(currentValue);
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            }
-        };
-
-        requestAnimationFrame(animate);
+        this.animateNumberChange(element, endValue);
     }
 
     // Modal Management
@@ -440,12 +433,219 @@ class ExpenseTracker {
         document.getElementById('transactionForm').reset();
         this.setCurrentDate();
         
-        // Add a subtle success animation to the form
+        // Add modern success animation to the form
         const form = document.querySelector('.form-section');
-        form.style.transform = 'scale(1.02)';
+        form.classList.add('form-success');
         setTimeout(() => {
-            form.style.transform = '';
-        }, 200);
+            form.classList.remove('form-success');
+        }, 800);
+        
+        // Create success particles
+        this.createSuccessParticles(form);
+    }
+
+    // Modern Animation Methods
+    createRippleEffect(event) {
+        const button = event.currentTarget;
+        const rect = button.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = event.clientX - rect.left - size / 2;
+        const y = event.clientY - rect.top - size / 2;
+        
+        const ripple = document.createElement('div');
+        ripple.style.cssText = `
+            position: absolute;
+            width: ${size}px;
+            height: ${size}px;
+            left: ${x}px;
+            top: ${y}px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s ease-out;
+            pointer-events: none;
+        `;
+        
+        button.style.position = 'relative';
+        button.style.overflow = 'hidden';
+        button.appendChild(ripple);
+        
+        setTimeout(() => {
+            ripple.remove();
+        }, 600);
+    }
+
+    createParticleEffect(element) {
+        const rect = element.getBoundingClientRect();
+        const particleCount = 3;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = `${rect.left + Math.random() * rect.width}px`;
+            particle.style.top = `${rect.top + rect.height}px`;
+            particle.style.animationDelay = `${i * 0.1}s`;
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 3000);
+        }
+    }
+
+    createSuccessParticles(element) {
+        const rect = element.getBoundingClientRect();
+        const particleCount = 8;
+        
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+                position: fixed;
+                width: 6px;
+                height: 6px;
+                background: linear-gradient(45deg, #10b981, #059669);
+                border-radius: 50%;
+                left: ${rect.left + rect.width / 2}px;
+                top: ${rect.top + rect.height / 2}px;
+                pointer-events: none;
+                z-index: 1000;
+                animation: successParticle 1.5s ease-out forwards;
+                animation-delay: ${i * 0.1}s;
+            `;
+            
+            // Add random direction
+            const angle = (i / particleCount) * 360;
+            particle.style.setProperty('--angle', `${angle}deg`);
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 1500);
+        }
+    }
+
+    addLoadingAnimation(element) {
+        const loader = document.createElement('div');
+        loader.className = 'loading-spinner';
+        element.appendChild(loader);
+        return loader;
+    }
+
+    removeLoadingAnimation(loader) {
+        if (loader && loader.parentNode) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.remove();
+            }, 300);
+        }
+    }
+
+    animateNumberChange(element, newValue) {
+        const currentValue = parseFloat(element.textContent.replace(/[$,]/g, '')) || 0;
+        const difference = newValue - currentValue;
+        const duration = 800;
+        const steps = 60;
+        const stepValue = difference / steps;
+        let currentStep = 0;
+
+        const animate = () => {
+            if (currentStep < steps) {
+                currentStep++;
+                const value = currentValue + (stepValue * currentStep);
+                element.textContent = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(value);
+                
+                // Add pulsing effect during animation
+                element.style.transform = `scale(${1 + Math.sin(currentStep * 0.3) * 0.05})`;
+                
+                requestAnimationFrame(animate);
+            } else {
+                element.style.transform = 'scale(1)';
+                element.textContent = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(newValue);
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    createMorphingBackground() {
+        const morphBg = document.createElement('div');
+        morphBg.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(99, 102, 241, 0.03) 0%, 
+                rgba(139, 92, 246, 0.03) 50%, 
+                rgba(99, 102, 241, 0.03) 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            pointer-events: none;
+            z-index: -1;
+        `;
+        
+        document.body.appendChild(morphBg);
+        return morphBg;
+    }
+
+    addScrollAnimations() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                } else {
+                    entry.target.style.animationPlayState = 'paused';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.summary-card, .transaction-item').forEach(el => {
+            observer.observe(el);
+        });
+    }
+
+    initAdvancedAnimations() {
+        // Create morphing background
+        this.createMorphingBackground();
+        
+        // Add scroll-based animations
+        this.addScrollAnimations();
+        
+        // Add CSS for success particles
+        if (!document.getElementById('success-particle-styles')) {
+            const style = document.createElement('style');
+            style.id = 'success-particle-styles';
+            style.textContent = `
+                @keyframes successParticle {
+                    0% {
+                        transform: translate(0, 0) scale(1);
+                        opacity: 1;
+                    }
+                    100% {
+                        transform: translate(
+                            calc(cos(var(--angle)) * 100px), 
+                            calc(sin(var(--angle)) * 100px)
+                        ) scale(0);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        // Add button ripple classes
+        document.querySelectorAll('.btn-primary, .btn-secondary, .btn-danger').forEach(btn => {
+            btn.classList.add('btn-ripple');
+        });
     }
 
     // Notification System
