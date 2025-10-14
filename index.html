@@ -233,6 +233,7 @@
             transition: all var(--transition-normal);
             position: relative;
             overflow: hidden;
+            cursor: pointer; /* Add pointer cursor */
         }
         
         .summary-card:hover {
@@ -266,9 +267,30 @@
             padding: 2rem;
             box-shadow: var(--shadow-sm);
         }
-        .analytics-section h2 {
+        .analytics-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1.5rem;
-            font-size: 1.5rem;
+        }
+        .chart-toggle {
+            display: flex;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .btn-chart-toggle {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all var(--transition-fast);
+        }
+        .btn-chart-toggle.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-sm);
         }
         .chart-container {
             position: relative;
@@ -400,6 +422,7 @@
             .transaction-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
             .transaction-actions { opacity: 1; }
             .filter-controls { flex-direction: column; align-items: stretch; }
+            .analytics-section .section-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
         }
     </style>
 </head>
@@ -441,15 +464,15 @@
             <main class="main-content">
                 <section class="summary-section">
                     <div class="summary-cards">
-                        <div class="summary-card income-card">
+                        <div class="summary-card income-card" id="incomeCard">
                             <div class="card-icon"><i class="fas fa-arrow-up"></i></div>
                             <div class="card-content"><h3>Total Income</h3><p class="amount" id="totalIncome">₹0.00</p></div>
                         </div>
-                        <div class="summary-card expense-card">
+                        <div class="summary-card expense-card" id="expenseCard">
                             <div class="card-icon"><i class="fas fa-arrow-down"></i></div>
                             <div class="card-content"><h3>Total Expenses</h3><p class="amount" id="totalExpenses">₹0.00</p></div>
                         </div>
-                        <div class="summary-card balance-card">
+                        <div class="summary-card balance-card" id="balanceCard">
                             <div class="card-icon"><i class="fas fa-balance-scale"></i></div>
                             <div class="card-content"><h3>Balance</h3><p class="amount" id="balance">₹0.00</p></div>
                         </div>
@@ -457,9 +480,15 @@
                 </section>
 
                 <section class="analytics-section">
-                    <h2>Expense Breakdown</h2>
+                    <div class="section-header">
+                        <h2 id="chartTitle">Expense Breakdown</h2>
+                        <div class="chart-toggle">
+                            <button id="showExpenseChartBtn" class="btn-chart-toggle active">Expenses</button>
+                            <button id="showIncomeChartBtn" class="btn-chart-toggle">Income</button>
+                        </div>
+                    </div>
                     <div class="chart-container">
-                        <canvas id="expenseChart"></canvas>
+                        <canvas id="analyticsChart"></canvas>
                     </div>
                 </section>
 
@@ -481,7 +510,7 @@
                     </div>
                 </section>
                 
-                <section class="filter-section">
+                <section class="filter-section" id="filterSection">
                     <div class="filter-controls">
                         <label for="dateRange">Filter by Date:</label>
                         <select id="dateRange" class="form-group">
@@ -491,11 +520,17 @@
                             <option value="month">This Month</option>
                             <option value="custom">Custom Range</option>
                         </select>
-                        <div id="customDateRange" style="display: none;">
+                        <div id="customDateRange" style="display: none; align-items: center; gap: 0.5rem;">
                             <input type="date" id="startDate" class="form-group">
                             <span>to</span>
                             <input type="date" id="endDate" class="form-group">
                         </div>
+                        <label for="typeFilter">Type:</label>
+                        <select id="typeFilter" class="form-group">
+                            <option value="all">All Types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
                          <button id="applyFilterBtn" class="btn-secondary">Apply</button>
                     </div>
                 </section>
@@ -526,8 +561,6 @@
     </div>
 
 <script type="module">
-    console.log("App script loaded.");
-
     // IMPORTANT: Supabase Configuration
     const SUPABASE_URL = 'https://xwkytyxxwdycennkbbxw.supabase.co'; // <-- PASTE YOUR URL
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3a3l0eXh4d2R5Y2VubmtiYnh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NTY3NzYsImV4cCI6MjA3NTMzMjc3Nn0.M6gjlVlxMmObeTKBmzIBPq5kVLivfpiS-fuimnbG6-0'; // <-- PASTE YOUR KEY
@@ -538,13 +571,10 @@
             <h2 style="color: var(--danger-color);">Configuration Error</h2>
             <p style="text-align: left; background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--danger-color);">
                 <strong>Error:</strong> You need to configure your Supabase credentials.
-                <br><br>
-                Please open this <code>index.html</code> file and replace the placeholder values with your actual Supabase project URL and public anon key.
             </p>
         </div>
         `;
     } else {
-        console.log("Supabase configured. Initializing client.");
         const { createClient } = supabase;
         const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -559,11 +589,7 @@
         const signUpBtn = document.getElementById('signUpBtn');
         const authMessage = document.getElementById('auth-message');
 
-        const showAuthMessage = (message, type = 'error') => {
-            authMessage.textContent = message;
-            authMessage.className = `auth-message ${type}`;
-        };
-
+        const showAuthMessage = (message, type = 'error') => { authMessage.textContent = message; authMessage.className = `auth-message ${type}`; };
         const setAuthLoading = (isLoading) => {
             signInBtn.disabled = isLoading;
             signUpBtn.disabled = isLoading;
@@ -574,19 +600,9 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             setAuthLoading(true);
-            const email = e.target.email.value;
-            const password = e.target.password.value;
-            console.log("Attempting sign in for:", email);
-
-            const { error } = await db.auth.signInWithPassword({ email, password });
-            if (error) {
-                console.error("Sign in error:", error.message);
-                showAuthMessage(error.message);
-            } else {
-                console.log("Sign in successful.");
-                loginForm.reset();
-                authMessage.style.display = 'none';
-            }
+            const { error } = await db.auth.signInWithPassword({ email: e.target.email.value, password: e.target.password.value });
+            if (error) { showAuthMessage(error.message); } 
+            else { loginForm.reset(); authMessage.style.display = 'none'; }
             setAuthLoading(false);
         });
 
@@ -594,50 +610,24 @@
             setAuthLoading(true);
             const email = loginForm.email.value;
             const password = loginForm.password.value;
-            console.log("Attempting sign up for:", email);
-
-            if (!email || !password) {
-                showAuthMessage("Please enter an email and password to sign up.");
-                setAuthLoading(false);
-                return;
-            }
-
+            if (!email || !password) { showAuthMessage("Please enter an email and password to sign up."); setAuthLoading(false); return; }
             const { error } = await db.auth.signUp({ email, password });
-            if (error) {
-                console.error("Sign up error:", error.message);
-                showAuthMessage(error.message);
-            } else {
-                console.log("Sign up successful, verification email sent.");
-                showAuthMessage('Success! Please check your email for a confirmation link.', 'success');
-            }
+            if (error) { showAuthMessage(error.message); } 
+            else { showAuthMessage('Success! Check your email for a confirmation link.', 'success'); }
             setAuthLoading(false);
         });
 
-        const logoutBtn = document.getElementById('logoutBtn');
-        logoutBtn.addEventListener('click', async () => {
-            console.log("Attempting to sign out.");
-            await db.auth.signOut();
-        });
+        document.getElementById('logoutBtn').addEventListener('click', () => db.auth.signOut());
 
-        // --- Auth State Management ---
         db.auth.onAuthStateChange((event, session) => {
-            console.log("Auth state changed. Event:", event);
             if (session && session.user) {
-                console.log("User is logged in:", session.user.email);
                 authContainer.style.display = 'none';
                 appContainer.style.display = 'block';
-                if (!expenseTrackerApp) {
-                    console.log("Initializing ExpenseTracker app...");
-                    expenseTrackerApp = new ExpenseTracker(session.user);
-                }
+                if (!expenseTrackerApp) { expenseTrackerApp = new ExpenseTracker(session.user); }
             } else {
-                console.log("User is logged out.");
                 authContainer.style.display = 'flex';
                 appContainer.style.display = 'none';
-                if (expenseTrackerApp) {
-                    expenseTrackerApp.destroy();
-                    expenseTrackerApp = null;
-                }
+                if (expenseTrackerApp) { expenseTrackerApp.destroy(); expenseTrackerApp = null; }
             }
         });
 
@@ -647,9 +637,9 @@
                 this.user = user;
                 this.transactions = [];
                 this.currentEditId = null;
-                this.expenseChart = null;
+                this.analyticsChart = null;
+                this.currentChartType = 'expense';
                 this.currencyFormatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
-                console.log("ExpenseTracker class instantiated for user:", this.user.email);
                 this.init();
             }
 
@@ -663,43 +653,61 @@
             }
             
             destroy() {
-                if (this.expenseChart) {
-                    this.expenseChart.destroy();
-                }
-                console.log("ExpenseTracker instance destroyed.");
+                if (this.analyticsChart) { this.analyticsChart.destroy(); }
             }
 
             bindEvents() {
+                // Forms
                 document.getElementById('transactionForm').addEventListener('submit', (e) => { e.preventDefault(); this.addTransaction(); });
                 document.getElementById('editForm').addEventListener('submit', (e) => { e.preventDefault(); this.saveEditTransaction(); });
+                
+                // Theme & Modal
                 document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
-                document.getElementById('clearAllBtn').addEventListener('click', () => this.clearAllTransactions());
                 document.getElementById('closeModal').addEventListener('click', () => this.closeEditModal());
                 document.getElementById('cancelEdit').addEventListener('click', () => this.closeEditModal());
+                
+                // Dynamic Categories
                 document.getElementById('type').addEventListener('change', (e) => this.updateCategoryOptions(e.target.value, 'add'));
                 document.getElementById('editType').addEventListener('change', (e) => this.updateCategoryOptions(e.target.value, 'edit'));
+                
+                // Filtering
                 document.getElementById('dateRange').addEventListener('change', (e) => {
-                    const customDateRange = document.getElementById('customDateRange');
-                    customDateRange.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+                    document.getElementById('customDateRange').style.display = e.target.value === 'custom' ? 'flex' : 'none';
                 });
                 document.getElementById('applyFilterBtn').addEventListener('click', () => this.loadTransactions());
+
+                // Clickable Summary Cards
+                document.getElementById('incomeCard').addEventListener('click', () => this.filterByType('income'));
+                document.getElementById('expenseCard').addEventListener('click', () => this.filterByType('expense'));
+                document.getElementById('balanceCard').addEventListener('click', () => this.filterByType('all'));
+                
+                // Chart Toggle
+                document.getElementById('showExpenseChartBtn').addEventListener('click', () => this.setChartType('expense'));
+                document.getElementById('showIncomeChartBtn').addEventListener('click', () => this.setChartType('income'));
             }
             
+            setChartType(type) {
+                this.currentChartType = type;
+                document.getElementById('showExpenseChartBtn').classList.toggle('active', type === 'expense');
+                document.getElementById('showIncomeChartBtn').classList.toggle('active', type === 'income');
+                document.getElementById('chartTitle').textContent = type === 'expense' ? 'Expense Breakdown' : 'Income Breakdown';
+                this.updateChart();
+            }
+            
+            filterByType(type) {
+                document.getElementById('typeFilter').value = type;
+                this.loadTransactions();
+                document.getElementById('filterSection').scrollIntoView({ behavior: 'smooth' });
+            }
+
             updateCategoryOptions(transactionType, formType) {
-                const expenseCategories = [
-                    { value: 'food', text: '🍔 Food' }, { value: 'transport', text: '🚗 Transport' },
-                    { value: 'bills', text: '💡 Bills' }, { value: 'shopping', text: '🛒 Shopping' },
-                    { value: 'entertainment', text: '🎬 Entertainment' }, { value: 'health', text: '🏥 Health' },
-                    { value: 'other', text: '📦 Other' }
-                ];
-                const incomeCategories = [
-                    { value: 'salary', text: '💰 Salary' }, { value: 'business', text: '📈 Business' },
-                    { value: 'rental', text: '🏠 Rental Income' }
-                ];
+                const categories = {
+                    expense: [ { value: 'food', text: '🍔 Food' }, { value: 'transport', text: '🚗 Transport' }, { value: 'bills', text: '💡 Bills' }, { value: 'shopping', text: '🛒 Shopping' }, { value: 'entertainment', text: '🎬 Entertainment' }, { value: 'health', text: '🏥 Health' }, { value: 'other', text: '📦 Other' } ],
+                    income: [ { value: 'salary', text: '💰 Salary' }, { value: 'business', text: '📈 Business' }, { value: 'rental', text: '🏠 Rental Income' } ]
+                };
                 const categorySelect = document.getElementById(formType === 'add' ? 'category' : 'editCategory');
-                const categories = transactionType === 'income' ? incomeCategories : expenseCategories;
                 categorySelect.innerHTML = '';
-                categories.forEach(cat => {
+                (categories[transactionType] || categories.expense).forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat.value;
                     option.textContent = cat.text;
@@ -714,8 +722,7 @@
             }
             
             toggleTheme() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 document.querySelector('#themeToggle i').className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
@@ -726,48 +733,36 @@
             }
 
             async loadTransactions() {
-                console.log("Loading transactions...");
                 let query = db.from('transactions').select('*').eq('user_id', this.user.id);
+                
+                // Type Filter
+                const typeFilter = document.getElementById('typeFilter').value;
+                if (typeFilter !== 'all') {
+                    query = query.eq('type', typeFilter);
+                }
 
+                // Date Range Filter
                 const dateRange = document.getElementById('dateRange').value;
                 const today = new Date();
                 let startDate, endDate;
-
-                switch(dateRange) {
-                    case 'today':
-                        startDate = new Date(today.setHours(0,0,0,0)).toISOString().slice(0, 10);
-                        query = query.eq('date', startDate);
-                        break;
-                    case 'week':
-                        const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
-                        startDate = new Date(firstDay.setHours(0,0,0,0)).toISOString().slice(0, 10);
-                        const lastDay = new Date(firstDay);
-                        lastDay.setDate(lastDay.getDate() + 6);
-                        endDate = new Date(lastDay.setHours(23,59,59,999)).toISOString().slice(0, 10);
-                        query = query.gte('date', startDate).lte('date', endDate);
-                        break;
-                    case 'month':
-                        startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
-                        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
-                        query = query.gte('date', startDate).lte('date', endDate);
-                        break;
-                    case 'custom':
-                        startDate = document.getElementById('startDate').value;
-                        endDate = document.getElementById('endDate').value;
-                        if (startDate && endDate) {
-                            query = query.gte('date', startDate).lte('date', endDate);
-                        }
-                        break;
-                }
-
-                const { data, error } = await query.order('date', { ascending: false });
-
-                if (error) { console.error('CRITICAL: Failed to load transactions:', error); return; }
+                if (dateRange === 'today') {
+                    startDate = new Date(today.setHours(0, 0, 0, 0)).toISOString().slice(0, 10);
+                    query = query.eq('date', startDate);
+                } else if (dateRange === 'custom') {
+                    startDate = document.getElementById('startDate').value;
+                    endDate = document.getElementById('endDate').value;
+                    if (startDate && endDate) query = query.gte('date', startDate).lte('date', endDate);
+                } // Other date ranges can be added here
                 
-                console.log("Transactions loaded:", data);
+                const { data, error } = await query.order('date', { ascending: false });
+                if (error) { console.error('Error loading transactions:', error); return; }
                 this.transactions = data;
-                this.updateSummary();
+                this.updateUI();
+            }
+            
+            updateUI() {
                 this.renderTransactions();
+                this.updateSummary();
                 this.updateChart();
             }
 
@@ -780,11 +775,9 @@
                     type: document.getElementById('type').value,
                     date: document.getElementById('date').value,
                 };
-                const { data, error } = await db.from('transactions').insert([newTransaction]).select();
+                const { error } = await db.from('transactions').insert([newTransaction]);
                 if (error) { console.error("Error adding transaction:", error); return; }
-                
                 await this.loadTransactions();
-                
                 document.getElementById('transactionForm').reset();
                 this.setCurrentDate();
                 this.updateCategoryOptions('expense', 'add');
@@ -805,100 +798,79 @@
 
             async saveEditTransaction() {
                 const updatedData = {
-                    description: document.getElementById('editDescription').value,
-                    amount: parseFloat(document.getElementById('editAmount').value),
-                    category: document.getElementById('editCategory').value,
-                    type: document.getElementById('editType').value,
+                    description: document.getElementById('editDescription').value, amount: parseFloat(document.getElementById('editAmount').value),
+                    category: document.getElementById('editCategory').value, type: document.getElementById('editType').value,
                     date: document.getElementById('editDate').value,
                 };
-                const { data, error } = await db.from('transactions').update(updatedData).eq('id', this.currentEditId).select();
+                const { error } = await db.from('transactions').update(updatedData).eq('id', this.currentEditId);
                 if (error) { console.error("Error updating transaction:", error); return; }
-                
                 await this.loadTransactions();
                 this.closeEditModal();
             }
 
             async deleteTransaction(id) {
-                if (!confirm('Are you sure you want to delete this transaction?')) return;
+                if (!confirm('Are you sure?')) return;
                 const { error } = await db.from('transactions').delete().eq('id', id);
-                if (error) { console.error("Error deleting transaction:", error); return; }
-                this.loadTransactions();
-            }
-
-            async clearAllTransactions() {
-                if (!confirm('Are you sure you want to delete ALL transactions?')) return;
-                const { error } = await db.from('transactions').delete().eq('user_id', this.user.id);
-                if (error) { console.error("Error clearing transactions:", error); return; }
-                this.loadTransactions();
+                if (error) { console.error("Error deleting transaction:", error); }
+                else { this.loadTransactions(); }
             }
             
             initChart() {
-                const ctx = document.getElementById('expenseChart').getContext('2d');
-                this.expenseChart = new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: [],
-                        datasets: [{
-                            data: [],
-                            backgroundColor: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6'],
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                            },
-                            title: {
-                                display: false
-                            }
-                        }
-                    }
-                });
+                const ctx = document.getElementById('analyticsChart').getContext('2d');
+                this.analyticsChart = new Chart(ctx, { type: 'pie', data: { labels: [], datasets: [{ data: [] }] }, options: { responsive: true, maintainAspectRatio: false } });
             }
 
             updateChart() {
-                const expenseData = this.transactions
-                    .filter(t => t.type === 'expense')
-                    .reduce((acc, t) => {
-                        acc[t.category] = (acc[t.category] || 0) + t.amount;
-                        return acc;
-                    }, {});
-
-                const labels = Object.keys(expenseData).map(this.capitalizeFirstLetter);
-                const data = Object.values(expenseData);
+                const chartType = this.currentChartType;
+                const dataToProcess = this.transactions.filter(t => t.type === chartType);
                 
-                this.expenseChart.data.labels = labels;
-                this.expenseChart.data.datasets[0].data = data;
-                this.expenseChart.update();
+                const categoryData = dataToProcess.reduce((acc, t) => {
+                    acc[t.category] = (acc[t.category] || 0) + t.amount;
+                    return acc;
+                }, {});
+                
+                const labels = Object.keys(categoryData).map(cat => this.capitalizeFirstLetter(cat));
+                const data = Object.values(categoryData);
+                
+                const expenseColors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#8b5cf6'];
+                const incomeColors = ['#10b981', '#22c55e', '#84cc16', '#3b82f6'];
+
+                this.analyticsChart.data.labels = labels;
+                this.analyticsChart.data.datasets[0].data = data;
+                this.analyticsChart.data.datasets[0].backgroundColor = chartType === 'expense' ? expenseColors : incomeColors;
+                this.analyticsChart.update();
             }
 
 
             updateSummary() {
-                const income = this.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-                const expenses = this.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-                const balance = income - expenses;
-                document.getElementById('totalIncome').textContent = this.currencyFormatter.format(income);
-                document.getElementById('totalExpenses').textContent = this.currencyFormatter.format(expenses);
-                document.getElementById('balance').textContent = this.currencyFormatter.format(balance);
+                 db.from('transactions').select('amount, type').eq('user_id', this.user.id).then(({data, error}) => {
+                    if(error) return;
+                    const income = data.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+                    const expenses = data.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+                    document.getElementById('totalIncome').textContent = this.currencyFormatter.format(income);
+                    document.getElementById('totalExpenses').textContent = this.currencyFormatter.format(expenses);
+                    document.getElementById('balance').textContent = this.currencyFormatter.format(income - expenses);
+                });
             }
 
             renderTransactions() {
                 const container = document.getElementById('transactionsList');
                 const emptyState = document.getElementById('emptyState');
-                if (this.transactions.length === 0) {
-                    container.innerHTML = '';
-                    container.appendChild(emptyState);
-                    return;
-                }
-                container.innerHTML = this.transactions.map(t => this.createTransactionHTML(t)).join('');
+                
+                const filteredTransactions = this.transactions; // Using already filtered data from loadTransactions
+
+                container.innerHTML = filteredTransactions.length === 0 ? '' : filteredTransactions.map(t => this.createTransactionHTML(t)).join('');
+                 if(filteredTransactions.length === 0) {
+                     container.innerHTML = ''; // Clear it first
+                     container.appendChild(emptyState);
+                 }
+
+
                 container.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => this.editTransaction(parseInt(btn.dataset.id))));
                 container.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => this.deleteTransaction(parseInt(btn.dataset.id))));
             }
 
             createTransactionHTML(transaction) {
-                const formattedAmount = this.currencyFormatter.format(transaction.amount);
                 return `
                     <div class="transaction-item ${transaction.type}">
                         <div class="transaction-info">
@@ -909,7 +881,7 @@
                             </div>
                         </div>
                         <div class="transaction-amount">
-                            <span class="amount-value ${transaction.type}">${transaction.type === 'expense' ? '-' : '+'} ${formattedAmount}</span>
+                            <span class="amount-value ${transaction.type}">${transaction.type === 'expense' ? '-' : '+'} ${this.currencyFormatter.format(transaction.amount)}</span>
                             <div class="transaction-actions">
                                 <button class="action-btn edit-btn" data-id="${transaction.id}"><i class="fas fa-edit"></i></button>
                                 <button class="action-btn delete-btn" data-id="${transaction.id}"><i class="fas fa-trash"></i></button>
@@ -924,15 +896,8 @@
                 return icons[category] || '📦';
             }
             
-            capitalizeFirstLetter(string) {
-                return string.charAt(0).toUpperCase() + string.slice(1);
-            }
-
-            closeEditModal() {
-                document.getElementById('editModal').classList.remove('active');
-                document.getElementById('editForm').reset();
-                this.currentEditId = null;
-            }
+            capitalizeFirstLetter(string) { return string.charAt(0).toUpperCase() + string.slice(1); }
+            closeEditModal() { document.getElementById('editModal').classList.remove('active'); document.getElementById('editForm').reset(); this.currentEditId = null; }
         }
     }
 </script>
