@@ -84,22 +84,63 @@
 
         /* Login Page Styles */
         #auth-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .auth-panel {
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 1rem;
+            padding: 2rem;
+        }
+
+        .auth-form-panel {
+            background-color: var(--bg-card);
+        }
+
+        .auth-decorative-panel {
+            display: none; /* Hidden on mobile */
+            background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #f59e0b);
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            color: white;
+            flex-direction: column;
+            text-align: center;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .decorative-content {
+            animation: fadeIn 1.5s ease-out;
+        }
+        
+        .decorative-content i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .decorative-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
         .auth-card {
             background: var(--bg-card);
             padding: 2.5rem;
             border-radius: var(--radius-xl);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 420px;
             text-align: center;
+            animation: slideUp 1s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
 
         .auth-card h2 {
@@ -415,8 +456,26 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
         .modal-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* Responsive Design */
+        @media (min-width: 768px) {
+            #auth-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .auth-decorative-panel {
+                display: flex;
+            }
+        }
         @media (max-width: 768px) {
             .form-row { grid-template-columns: 1fr; }
             .transaction-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -429,22 +488,31 @@
 <body>
     <!-- Authentication Page -->
     <div id="auth-container">
-        <div class="auth-card">
-            <h2>Welcome Back!</h2>
-            <p>Sign in to manage your expenses.</p>
-            <form class="auth-form" id="loginForm">
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" placeholder="you@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="••••••••" required>
-                </div>
-                <button type="submit" id="signInBtn" class="btn-primary">Sign In</button>
-                <button type="button" id="signUpBtn" class="btn-secondary">Create Account</button>
-            </form>
-            <p id="auth-message" class="auth-message"></p>
+        <div class="auth-panel auth-form-panel">
+            <div class="auth-card">
+                <h2>Welcome Back!</h2>
+                <p>Sign in to manage your expenses.</p>
+                <form class="auth-form" id="loginForm">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" id="signInBtn" class="btn-primary">Sign In</button>
+                    <button type="button" id="signUpBtn" class="btn-secondary">Create Account</button>
+                </form>
+                <p id="auth-message" class="auth-message"></p>
+            </div>
+        </div>
+         <div class="auth-panel auth-decorative-panel">
+            <div class="decorative-content">
+                <i class="fas fa-chart-pie"></i>
+                <h1>Master Your Money</h1>
+                <p>All your finances, in one clean interface.</p>
+            </div>
         </div>
     </div>
 
@@ -625,7 +693,7 @@
                 appContainer.style.display = 'block';
                 if (!expenseTrackerApp) { expenseTrackerApp = new ExpenseTracker(session.user); }
             } else {
-                authContainer.style.display = 'flex';
+                authContainer.style.display = 'grid';
                 appContainer.style.display = 'none';
                 if (expenseTrackerApp) { expenseTrackerApp.destroy(); expenseTrackerApp = null; }
             }
@@ -904,3 +972,4 @@
 
 </body>
 </html>
+
